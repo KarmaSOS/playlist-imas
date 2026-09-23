@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#121214">
 
     <title>IDOLM@STER Playlist Manager</title>
@@ -10,14 +10,19 @@
     <style>
         :root {
             --bg-color: #121214;
-            --card-bg: #1e1e24;
-            --card-hover: #262630;
+            --card-bg: #1c1c22;
+            --card-hover: #242430;
             --accent-color: #6366f1;
             --accent-hover: #4f46e5;
+            --collection-color: #10b981;
+            --collection-hover: #0d9c6e;
             --text-primary: #f3f4f6;
             --text-secondary: #9ca3af;
-            --border-color: #2e2e38;
-            --radius: 12px;
+            --text-faint: #6b7280;
+            --border-color: #2b2b34;
+            --radius: 14px;
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
         }
 
         * {
@@ -25,35 +30,41 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        html {
+            scroll-padding-top: var(--safe-top);
+        }
+
         body {
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: var(--bg-color);
+            background: radial-gradient(circle at top, #17171c 0%, var(--bg-color) 55%);
             color: var(--text-primary);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             overscroll-behavior-y: none;
+            padding-bottom: var(--safe-bottom);
         }
 
         header {
             position: sticky;
             top: 0;
             z-index: 10;
-            padding: 16px 20px;
+            padding: calc(14px + var(--safe-top)) 20px 14px;
             background: rgba(18, 18, 20, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             border-bottom: 1px solid var(--border-color);
         }
 
         header h1 {
             margin: 0 0 4px;
-            font-size: 20px;
-            font-weight: 700;
+            font-size: 19px;
+            font-weight: 800;
             display: flex;
             align-items: center;
             gap: 8px;
+            letter-spacing: -0.02em;
         }
 
         header p {
@@ -64,14 +75,14 @@
 
         main {
             flex: 1;
-            max-width: 800px;
+            max-width: 760px;
             width: 100%;
             margin: 0 auto;
             padding: 16px;
             padding-bottom: 40px;
         }
 
-        /* Nav & Breadcrumbs */
+        /* Breadcrumbs */
         .breadcrumbs-container {
             overflow-x: auto;
             white-space: nowrap;
@@ -95,19 +106,25 @@
         .breadcrumb {
             color: var(--accent-color);
             cursor: pointer;
-            font-weight: 500;
-            padding: 4px 8px;
+            font-weight: 600;
+            padding: 5px 10px;
             background: rgba(99, 102, 241, 0.1);
-            border-radius: 6px;
-            transition: background 0.15s ease;
+            border-radius: 20px;
+            transition: background 0.15s ease, transform 0.15s ease;
+        }
+
+        .breadcrumb.current {
+            color: #c7c8f5;
+            background: rgba(99, 102, 241, 0.22);
         }
 
         .breadcrumb:active {
-            background: rgba(99, 102, 241, 0.25);
+            background: rgba(99, 102, 241, 0.3);
+            transform: scale(0.96);
         }
 
         .separator {
-            color: var(--text-secondary);
+            color: var(--text-faint);
             font-size: 11px;
         }
 
@@ -115,13 +132,45 @@
         .toolbar {
             display: flex;
             gap: 10px;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
+        }
+
+        .search-wrap {
+            position: relative;
+            margin-bottom: 14px;
+        }
+
+        .search-wrap input {
+            width: 100%;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border-radius: var(--radius);
+            padding: 11px 14px 11px 36px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+
+        .search-wrap input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .search-wrap::before {
+            content: "🔍";
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 13px;
+            opacity: 0.6;
         }
 
         button {
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 6px;
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
             padding: 10px 16px;
@@ -131,13 +180,13 @@
             font-weight: 600;
             background: var(--card-bg);
             color: var(--text-primary);
-            transition: all 0.15s ease;
+            transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
             user-select: none;
             touch-action: manipulation;
         }
 
         button:active {
-            transform: scale(0.97);
+            transform: scale(0.96);
         }
 
         button.primary {
@@ -150,8 +199,22 @@
             background: var(--accent-hover);
         }
 
+        button.collection {
+            background: var(--collection-color);
+            border-color: var(--collection-color);
+            color: #06251c;
+        }
+
+        button.collection:active {
+            background: var(--collection-hover);
+        }
+
+        button.ghost {
+            background: transparent;
+        }
+
         button:disabled {
-            opacity: 0.4;
+            opacity: 0.35;
             cursor: not-allowed;
             transform: none !important;
         }
@@ -171,7 +234,13 @@
             background: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
-            transition: background 0.15s ease;
+            transition: background 0.15s ease, transform 0.15s ease;
+            animation: itemIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes itemIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         @media (min-width: 600px) {
@@ -179,6 +248,10 @@
                 flex-direction: row;
                 align-items: center;
                 justify-content: space-between;
+            }
+
+            .item:hover {
+                background: var(--card-hover);
             }
         }
 
@@ -189,7 +262,7 @@
 
         .item-name {
             font-size: 16px;
-            font-weight: 600;
+            font-weight: 700;
             margin-bottom: 6px;
             word-break: break-word;
         }
@@ -197,8 +270,8 @@
         .badge {
             display: inline-block;
             font-size: 11px;
-            font-weight: 500;
-            padding: 2px 8px;
+            font-weight: 600;
+            padding: 3px 9px;
             border-radius: 20px;
             background: rgba(255, 255, 255, 0.08);
             color: var(--text-secondary);
@@ -214,23 +287,56 @@
             color: #6ee7b7;
         }
 
+        .badge.locked {
+            background: rgba(156, 163, 175, 0.12);
+            color: var(--text-faint);
+        }
+
         .item-actions {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
         }
 
-        .item-actions button {
+        .item-actions button,
+        .item-actions a {
             flex: 1;
             font-size: 13px;
             padding: 8px 12px;
             min-height: 40px;
+            text-decoration: none;
         }
 
         @media (min-width: 600px) {
-            .item-actions button {
+            .item-actions button,
+            .item-actions a {
                 flex: initial;
             }
+        }
+
+        .link-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            background: transparent;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .link-btn:active {
+            transform: scale(0.96);
+        }
+
+        .locked-note {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-faint);
+            padding: 8px 2px;
         }
 
         .empty {
@@ -246,7 +352,7 @@
         .toast {
             position: fixed;
             left: 50%;
-            bottom: 24px;
+            bottom: calc(24px + var(--safe-bottom));
             transform: translateX(-50%) translateY(20px);
             padding: 10px 20px;
             background: #27272a;
@@ -260,6 +366,8 @@
             pointer-events: none;
             transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             z-index: 100;
+            max-width: calc(100vw - 40px);
+            text-align: center;
         }
 
         .toast.show {
@@ -273,7 +381,7 @@
 
 <header>
     <h1>🎵 IDOLM@STER Playlist</h1>
-    <p>Browse music branches & copy Jockie commands</p>
+    <p>Browse music branches &amp; copy Jockie commands</p>
 </header>
 
 <main>
@@ -282,17 +390,13 @@
     </div>
 
     <div class="toolbar">
-        <button id="backButton" onclick="goBack()">
+        <button id="backButton" class="ghost" onclick="goBack()">
             ← Back
         </button>
+    </div>
 
-        <button
-            id="copyAllButton"
-            class="primary"
-            style="flex: 1;"
-            onclick="copyCurrentBranch()">
-            📋 Copy Current Branch
-        </button>
+    <div class="search-wrap">
+        <input id="searchInput" type="text" placeholder="Filter this folder…" oninput="render()">
     </div>
 
     <div id="items" class="items"></div>
@@ -343,41 +447,40 @@
         return typeof value === "string" && value.startsWith("http");
     }
 
-    function isCollectionCode(value) {
-        return typeof value === "string" && value.length > 0;
+    // A node is only "copyable" as a collection if it explicitly carries a Code.
+    // The bare top-level "IDOLM@STER" wrapper has no Code, so it is never copyable —
+    // that's what keeps it from ever producing a giant +play loop.
+    function nodeHasCode(value) {
+        return !!(value && typeof value === "object" && typeof value.Code === "string" && value.Code.length > 0);
     }
 
-    function collectPlaylists(node) {
-        const playlists = [];
-
+    // Used only as a fallback for folders that have no Code of their own
+    // (currently just the root IDOLM@STER wrapper). Copy buttons for such
+    // folders are hidden in the UI, but this keeps command generation correct
+    // if it's ever invoked programmatically.
+    function commandsForNode(node) {
         if (isPlaylist(node)) {
-            playlists.push({ type: "playlist", value: node });
-            return playlists;
+            return [`+play ${node}`];
+        }
+
+        if (nodeHasCode(node)) {
+            return [`+collection load ${node.Code}`];
         }
 
         if (node && typeof node === "object") {
-            if (isCollectionCode(node.Code)) {
-                playlists.push({ type: "collection", value: node.Code });
-            }
-
+            const commands = [];
             for (const [key, value] of Object.entries(node)) {
                 if (key === "Code") continue;
-                playlists.push(...collectPlaylists(value));
+                commands.push(...commandsForNode(value));
             }
+            return commands;
         }
 
-        return playlists;
+        return [];
     }
 
     function generateCommands(node) {
-        const entries = collectPlaylists(node);
-        return entries
-            .map(entry =>
-                entry.type === "collection"
-                    ? `+collection load ${entry.value}`
-                    : `+play ${entry.value}`
-            )
-            .join("\n");
+        return commandsForNode(node).join("\n");
     }
 
     function render() {
@@ -389,21 +492,28 @@
 
         if (!node || typeof node !== "object") {
             itemsContainer.innerHTML = `<div class="empty">Nothing to display.</div>`;
+            document.getElementById("backButton").disabled = currentPath.length === 0;
             return;
         }
 
-        const entries = Object.entries(node).filter(([name]) => name !== "Code");
+        const filter = (document.getElementById("searchInput")?.value || "").trim().toLowerCase();
+        let entries = Object.entries(node).filter(([name]) => name !== "Code");
+
+        if (filter) {
+            entries = entries.filter(([name]) => name.toLowerCase().includes(filter));
+        }
 
         if (entries.length === 0) {
-            itemsContainer.innerHTML = `<div class="empty">This folder is empty.</div>`;
-            return;
+            itemsContainer.innerHTML = `<div class="empty">${filter ? "No matches for that filter." : "This folder is empty."}</div>`;
         }
 
-        for (const [name, value] of entries) {
+        entries.forEach(([name, value], index) => {
             const isLeaf = isPlaylist(value);
+            const hasCode = !isLeaf && nodeHasCode(value);
 
             const item = document.createElement("div");
             item.className = "item";
+            item.style.animationDelay = `${Math.min(index, 10) * 30}ms`;
 
             const info = document.createElement("div");
             info.className = "item-info";
@@ -418,11 +528,12 @@
             if (isLeaf) {
                 itemType.classList.add("playlist");
                 itemType.textContent = "YouTube Playlist";
-            } else if (isCollectionCode(value?.Code)) {
+            } else if (hasCode) {
                 itemType.classList.add("collection");
                 itemType.textContent = "Collection";
             } else {
-                itemType.textContent = "Folder";
+                itemType.classList.add("locked");
+                itemType.textContent = "Folder (no collection)";
             }
 
             info.appendChild(itemName);
@@ -432,43 +543,49 @@
             actions.className = "item-actions";
 
             if (isLeaf) {
+                const openLink = document.createElement("a");
+                openLink.className = "link-btn";
+                openLink.href = value;
+                openLink.target = "_blank";
+                openLink.rel = "noopener";
+                openLink.textContent = "↗ Open";
+                actions.appendChild(openLink);
+
                 const copyButton = document.createElement("button");
                 copyButton.className = "primary";
                 copyButton.textContent = "📋 Copy +play";
-                copyButton.onclick = () => copyText(`+play ${value}`);
+                copyButton.onclick = () => copyText(`+play ${value}`, copyButton, "📋 Copy +play");
                 actions.appendChild(copyButton);
             } else {
                 const openButton = document.createElement("button");
                 openButton.textContent = "Open →";
                 openButton.onclick = () => {
                     currentPath.push(name);
+                    const search = document.getElementById("searchInput");
+                    if (search) search.value = "";
                     render();
                     window.scrollTo({ top: 0, behavior: "smooth" });
                 };
                 actions.appendChild(openButton);
 
-                if (isCollectionCode(value?.Code)) {
+                if (hasCode) {
                     const collectionButton = document.createElement("button");
-                    collectionButton.className = "primary";
-                    collectionButton.textContent = "📋 Collection";
-                    collectionButton.onclick = () => copyText(`+collection load ${value.Code}`);
+                    collectionButton.className = "collection";
+                    collectionButton.textContent = "📋 Copy Collection";
+                    collectionButton.onclick = () =>
+                        copyText(`+collection load ${value.Code}`, collectionButton, "📋 Copy Collection");
                     actions.appendChild(collectionButton);
                 }
-
-                const copyButton = document.createElement("button");
-                copyButton.className = "primary";
-                copyButton.textContent = "📋 Copy All";
-                copyButton.onclick = () => copyText(generateCommands(value));
-                actions.appendChild(copyButton);
+                // Folders without a Code (e.g. the root IDOLM@STER wrapper) intentionally
+                // get no copy button at all — nothing to copy for that whole branch.
             }
 
             item.appendChild(info);
             item.appendChild(actions);
             itemsContainer.appendChild(item);
-        }
+        });
 
         document.getElementById("backButton").disabled = currentPath.length === 0;
-        document.getElementById("copyAllButton").disabled = collectPlaylists(node).length === 0;
     }
 
     function renderBreadcrumbs() {
@@ -476,7 +593,7 @@
         container.innerHTML = "";
 
         const root = document.createElement("span");
-        root.className = "breadcrumb";
+        root.className = "breadcrumb" + (currentPath.length === 0 ? " current" : "");
         root.textContent = "Root";
         root.onclick = () => {
             currentPath = [];
@@ -491,7 +608,7 @@
             container.appendChild(separator);
 
             const crumb = document.createElement("span");
-            crumb.className = "breadcrumb";
+            crumb.className = "breadcrumb" + (i === currentPath.length - 1 ? " current" : "");
             crumb.textContent = currentPath[i];
             crumb.onclick = () => {
                 currentPath = currentPath.slice(0, i + 1);
@@ -508,23 +625,25 @@
     function goBack() {
         if (currentPath.length === 0) return;
         currentPath.pop();
+        const search = document.getElementById("searchInput");
+        if (search) search.value = "";
         render();
     }
 
-    async function copyText(text) {
+    async function copyText(text, sourceButton, resetLabel) {
         try {
             if (navigator.clipboard && window.isSecureContext) {
                 await navigator.clipboard.writeText(text);
-                showToast("Copied to clipboard!");
+                onCopySuccess(sourceButton, resetLabel);
             } else {
-                fallbackCopyText(text);
+                fallbackCopyText(text, sourceButton, resetLabel);
             }
         } catch (error) {
-            fallbackCopyText(text);
+            fallbackCopyText(text, sourceButton, resetLabel);
         }
     }
 
-    function fallbackCopyText(text) {
+    function fallbackCopyText(text, sourceButton, resetLabel) {
         const textarea = document.createElement("textarea");
         textarea.value = text;
         textarea.style.position = "fixed";
@@ -536,23 +655,22 @@
 
         try {
             document.execCommand("copy");
-            showToast("Copied to clipboard!");
+            onCopySuccess(sourceButton, resetLabel);
         } catch (err) {
             alert("Clipboard copy failed. Output:\n\n" + text);
         }
         document.body.removeChild(textarea);
     }
 
-    function copyCurrentBranch() {
-        const node = getCurrentNode();
-        const commands = generateCommands(node);
-
-        if (!commands) {
-            showToast("No playlists found in current branch.");
-            return;
-        }
-
-        copyText(commands);
+    function onCopySuccess(sourceButton, resetLabel) {
+        showToast("Copied to clipboard!");
+        if (!sourceButton) return;
+        const original = resetLabel || sourceButton.textContent;
+        sourceButton.textContent = "✅ Copied";
+        sourceButton.disabled = false;
+        setTimeout(() => {
+            sourceButton.textContent = original;
+        }, 1200);
     }
 
     function showToast(message) {
