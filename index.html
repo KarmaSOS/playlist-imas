@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#121214">
+
+    <title>IDOLM@STER Playlist Manager</title>
+
+    <style>
+        :root {
+            --bg-color: #121214;
+            --card-bg: #1e1e24;
+            --card-hover: #262630;
+            --accent-color: #6366f1;
+            --accent-hover: #4f46e5;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --border-color: #2e2e38;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overscroll-behavior-y: none;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            padding: 16px 20px;
+            background: rgba(18, 18, 20, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        header h1 {
+            margin: 0 0 4px;
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        header p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        main {
+            flex: 1;
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 16px;
+            padding-bottom: 40px;
+        }
+
+        /* Nav & Breadcrumbs */
+        .breadcrumbs-container {
+            overflow-x: auto;
+            white-space: nowrap;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        .breadcrumbs-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .breadcrumbs {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+
+        .breadcrumb {
+            color: var(--accent-color);
+            cursor: pointer;
+            font-weight: 500;
+            padding: 4px 8px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 6px;
+            transition: background 0.15s ease;
+        }
+
+        .breadcrumb:active {
+            background: rgba(99, 102, 241, 0.25);
+        }
+
+        .separator {
+            color: var(--text-secondary);
+            font-size: 11px;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 10px 16px;
+            min-height: 44px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            transition: all 0.15s ease;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        button.primary {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            color: #ffffff;
+        }
+
+        button.primary:active {
+            background: var(--accent-hover);
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Items List */
+        .items {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .item {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            transition: background 0.15s ease;
+        }
+
+        @media (min-width: 600px) {
+            .item {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+            }
+        }
+
+        .item-info {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .item-name {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            word-break: break-word;
+        }
+
+        .badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-secondary);
+        }
+
+        .badge.playlist {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+        }
+
+        .badge.collection {
+            background: rgba(16, 185, 129, 0.15);
+            color: #6ee7b7;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .item-actions button {
+            flex: 1;
+            font-size: 13px;
+            padding: 8px 12px;
+            min-height: 40px;
+        }
+
+        @media (min-width: 600px) {
+            .item-actions button {
+                flex: initial;
+            }
+        }
+
+        .empty {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--text-secondary);
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            border: 1px dashed var(--border-color);
+        }
+
+        /* Toast Feedback */
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 24px;
+            transform: translateX(-50%) translateY(20px);
+            padding: 10px 20px;
+            background: #27272a;
+            color: #f4f4f5;
+            border: 1px solid #3f3f46;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 100;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>🎵 IDOLM@STER Playlist</h1>
+    <p>Browse music branches & copy Jockie commands</p>
+</header>
+
+<main>
+    <div class="breadcrumbs-container">
+        <div id="breadcrumbs" class="breadcrumbs"></div>
+    </div>
+
+    <div class="toolbar">
+        <button id="backButton" onclick="goBack()">
+            ← Back
+        </button>
+
+        <button
+            id="copyAllButton"
+            class="primary"
+            style="flex: 1;"
+            onclick="copyCurrentBranch()">
+            📋 Copy Current Branch
+        </button>
+    </div>
+
+    <div id="items" class="items"></div>
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script>
+    let playlistData = {};
+    let currentPath = [];
+
+    async function loadPlaylists() {
+        try {
+            const response = await fetch("playlists.json");
+
+            if (!response.ok) {
+                throw new Error("Could not load playlists.json");
+            }
+
+            playlistData = await response.json();
+            render();
+
+        } catch (error) {
+            document.getElementById("items").innerHTML = `
+                <div class="empty">
+                    <strong>Could not load playlists.json</strong>
+                    <br><br>
+                    Ensure <code>index.html</code> and <code>playlists.json</code> are placed together in your web root.
+                </div>
+            `;
+            console.error(error);
+        }
+    }
+
+    function getCurrentNode() {
+        let node = playlistData;
+        for (const part of currentPath) {
+            if (node && typeof node === "object") {
+                node = node[part];
+            } else {
+                return null;
+            }
+        }
+        return node;
+    }
+
+    function isPlaylist(value) {
+        return typeof value === "string" && value.startsWith("http");
+    }
+
+    function isCollectionCode(value) {
+        return typeof value === "string" && value.length > 0;
+    }
+
+    function collectPlaylists(node) {
+        const playlists = [];
+
+        if (isPlaylist(node)) {
+            playlists.push({ type: "playlist", value: node });
+            return playlists;
+        }
+
+        if (node && typeof node === "object") {
+            if (isCollectionCode(node.Code)) {
+                playlists.push({ type: "collection", value: node.Code });
+            }
+
+            for (const [key, value] of Object.entries(node)) {
+                if (key === "Code") continue;
+                playlists.push(...collectPlaylists(value));
+            }
+        }
+
+        return playlists;
+    }
+
+    function generateCommands(node) {
+        const entries = collectPlaylists(node);
+        return entries
+            .map(entry =>
+                entry.type === "collection"
+                    ? `+collection load ${entry.value}`
+                    : `+play ${entry.value}`
+            )
+            .join("\n");
+    }
+
+    function render() {
+        const node = getCurrentNode();
+        renderBreadcrumbs();
+
+        const itemsContainer = document.getElementById("items");
+        itemsContainer.innerHTML = "";
+
+        if (!node || typeof node !== "object") {
+            itemsContainer.innerHTML = `<div class="empty">Nothing to display.</div>`;
+            return;
+        }
+
+        const entries = Object.entries(node).filter(([name]) => name !== "Code");
+
+        if (entries.length === 0) {
+            itemsContainer.innerHTML = `<div class="empty">This folder is empty.</div>`;
+            return;
+        }
+
+        for (const [name, value] of entries) {
+            const isLeaf = isPlaylist(value);
+
+            const item = document.createElement("div");
+            item.className = "item";
+
+            const info = document.createElement("div");
+            info.className = "item-info";
+
+            const itemName = document.createElement("div");
+            itemName.className = "item-name";
+            itemName.textContent = name;
+
+            const itemType = document.createElement("span");
+            itemType.className = "badge";
+
+            if (isLeaf) {
+                itemType.classList.add("playlist");
+                itemType.textContent = "YouTube Playlist";
+            } else if (isCollectionCode(value?.Code)) {
+                itemType.classList.add("collection");
+                itemType.textContent = "Collection";
+            } else {
+                itemType.textContent = "Folder";
+            }
+
+            info.appendChild(itemName);
+            info.appendChild(itemType);
+
+            const actions = document.createElement("div");
+            actions.className = "item-actions";
+
+            if (isLeaf) {
+                const copyButton = document.createElement("button");
+                copyButton.className = "primary";
+                copyButton.textContent = "📋 Copy +play";
+                copyButton.onclick = () => copyText(`+play ${value}`);
+                actions.appendChild(copyButton);
+            } else {
+                const openButton = document.createElement("button");
+                openButton.textContent = "Open →";
+                openButton.onclick = () => {
+                    currentPath.push(name);
+                    render();
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                };
+                actions.appendChild(openButton);
+
+                if (isCollectionCode(value?.Code)) {
+                    const collectionButton = document.createElement("button");
+                    collectionButton.className = "primary";
+                    collectionButton.textContent = "📋 Collection";
+                    collectionButton.onclick = () => copyText(`+collection load ${value.Code}`);
+                    actions.appendChild(collectionButton);
+                }
+
+                const copyButton = document.createElement("button");
+                copyButton.className = "primary";
+                copyButton.textContent = "📋 Copy All";
+                copyButton.onclick = () => copyText(generateCommands(value));
+                actions.appendChild(copyButton);
+            }
+
+            item.appendChild(info);
+            item.appendChild(actions);
+            itemsContainer.appendChild(item);
+        }
+
+        document.getElementById("backButton").disabled = currentPath.length === 0;
+        document.getElementById("copyAllButton").disabled = collectPlaylists(node).length === 0;
+    }
+
+    function renderBreadcrumbs() {
+        const container = document.getElementById("breadcrumbs");
+        container.innerHTML = "";
+
+        const root = document.createElement("span");
+        root.className = "breadcrumb";
+        root.textContent = "Root";
+        root.onclick = () => {
+            currentPath = [];
+            render();
+        };
+        container.appendChild(root);
+
+        for (let i = 0; i < currentPath.length; i++) {
+            const separator = document.createElement("span");
+            separator.className = "separator";
+            separator.textContent = "›";
+            container.appendChild(separator);
+
+            const crumb = document.createElement("span");
+            crumb.className = "breadcrumb";
+            crumb.textContent = currentPath[i];
+            crumb.onclick = () => {
+                currentPath = currentPath.slice(0, i + 1);
+                render();
+            };
+            container.appendChild(crumb);
+        }
+
+        // Auto-scroll breadcrumbs container to end
+        const scrollContainer = container.parentElement;
+        scrollContainer.scrollLeft = scrollContainer.scrollWidth;
+    }
+
+    function goBack() {
+        if (currentPath.length === 0) return;
+        currentPath.pop();
+        render();
+    }
+
+    async function copyText(text) {
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+                showToast("Copied to clipboard!");
+            } else {
+                fallbackCopyText(text);
+            }
+        } catch (error) {
+            fallbackCopyText(text);
+        }
+    }
+
+    function fallbackCopyText(text) {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+        textarea.style.top = "0";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+
+        try {
+            document.execCommand("copy");
+            showToast("Copied to clipboard!");
+        } catch (err) {
+            alert("Clipboard copy failed. Output:\n\n" + text);
+        }
+        document.body.removeChild(textarea);
+    }
+
+    function copyCurrentBranch() {
+        const node = getCurrentNode();
+        const commands = generateCommands(node);
+
+        if (!commands) {
+            showToast("No playlists found in current branch.");
+            return;
+        }
+
+        copyText(commands);
+    }
+
+    function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.classList.add("show");
+
+        setTimeout(() => {
+            toast.classList.remove("show");
+        }, 1800);
+    }
+
+    loadPlaylists();
+</script>
+
+</body>
+</html>
